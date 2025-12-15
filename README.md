@@ -1,6 +1,6 @@
 # Yurt Yönetim Sistemi
 
-Bu proje, **Kırklareli Üniversitesi Yazılım Mühendisliği** Bölümü "Yazılım Mimarisi ve Tasarımı" dersi dönem projesi olarak geliştirilmiştir. **PRJ-2 Yurt Yönetim Sistemi** konusunu kapsar. Yurt idaresinin günlük işlemlerini dijital ortamda verimli bir şekilde yönetmesini sağlar.
+Bu proje, **Kırklareli Üniversitesi Yazılım Mühendisliği** Bölümü "Yazılım Mimarisi ve Tasarımı" dersi dönem projesi olarak geliştirilmiştir. ** Yurt Yönetim Sistemi** konusunu kapsar. Yurt idaresinin günlük işlemlerini dijital ortamda verimli bir şekilde yönetmesini sağlar.
 
 ## 👨‍💻 Proje Ekibi
 *   **Ad Soyad:** Azo İSMAİL                      
