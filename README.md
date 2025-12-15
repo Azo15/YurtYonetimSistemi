@@ -3,9 +3,9 @@
 Bu proje, **Kırklareli Üniversitesi Yazılım Mühendisliği** Bölümü "Yazılım Mimarisi ve Tasarımı" dersi dönem projesi olarak geliştirilmiştir. **PRJ-2 Yurt Yönetim Sistemi** konusunu kapsar. Yurt idaresinin günlük işlemlerini dijital ortamda verimli bir şekilde yönetmesini sağlar.
 
 ## 👨‍💻 Proje Ekibi
-*   **Ad Soyad:** Ümit SENCER 
+*   **Ad Soyad:** Azo İSMAİL                      
+*   **Ad Soyad:** Ümit SENCER                   [https://github.com/Umitsencer]
 *   **Ad Soyad:** Yusuf İslam Sözen             [https://github.com/YusufSozen]
-*   **Ad Soyad:** Azo İSMAİL                    [https://github.com/Azo15]  
 
 ---
 
