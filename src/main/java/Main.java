@@ -26,7 +26,11 @@ public class Main {
         System.out.println("Yurt Otomasyon Sistemi Başlatılıyor...");
 
         // 1. Veritabanı bağlantısını başlat (Singleton Deseni)
-        DatabaseConnection.getInstance();
+        // Varsayılan: SQLite
+        DatabaseConnection db = DatabaseConnection.getInstance();
+
+        // ⚠️ MYSQL'E GEÇMEK İÇİN AŞAĞIDAKİ YORUMU AÇ:
+        db.setBridge(new com.yurt.patterns.bridge.MySQLBridge());
 
         // 2. Arayüzü Başlat
         SwingUtilities.invokeLater(() -> {
