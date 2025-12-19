@@ -3,10 +3,10 @@ package com.yurt.view;
 import com.yurt.database.DatabaseConnection;
 import com.yurt.model.User;
 import com.yurt.model.DateUtils;
+import com.yurt.utils.UIHelper;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.Connection;
@@ -17,16 +17,12 @@ import java.sql.SQLException;
 public class StudentView extends BasePage {
 
     private User currentUser;
-
-    // Tablo Modelleri
-    private DefaultTableModel modelPermissions;
-    private DefaultTableModel modelRoommates;
-
+    private DefaultTableModel modelPermissions, modelRoommates;
     private JTextField txtBaslangic, txtBitis, txtSebep;
-    private JLabel lblOdaBilgisi;
+    private JLabel lblOdaBilgisi, lblWelcome;
 
     public StudentView(User user) {
-        super("Öğrenci Paneli - " + user.getAdSoyad(), 1200, 700);
+        super("Öğrenci Paneli - " + user.getAdSoyad(), 1300, 800);
         this.currentUser = user;
         initializeComponents();
         loadPermissions();
@@ -36,127 +32,121 @@ public class StudentView extends BasePage {
 
     @Override
     public void initializeComponents() {
-        // --- 1. ÜST PANEL (HEADER) ---
-        JPanel pnlTop = new JPanel(new BorderLayout());
-        pnlTop.setBackground(new Color(40, 44, 52)); // Modern Dark
-        pnlTop.setBorder(new EmptyBorder(15, 20, 15, 20));
+        setLayout(new BorderLayout());
+        getContentPane().setBackground(UIHelper.BG_LIGHT);
 
-        JLabel lblHosgeldin = new JLabel("Hoşgeldin, " + currentUser.getAdSoyad());
-        lblHosgeldin.setForeground(Color.WHITE);
-        lblHosgeldin.putClientProperty("FlatLaf.style", "font: bold +4");
-        pnlTop.add(lblHosgeldin, BorderLayout.WEST);
+        // --- 1. HEADER (BANNER) ---
+        JPanel pnlHeader = new JPanel(new BorderLayout());
+        pnlHeader.setBackground(new Color(40, 44, 52)); // Dark Header
+        pnlHeader.setBorder(new EmptyBorder(20, 30, 20, 30));
 
-        JPanel pnlInfo = new JPanel(new FlowLayout(FlowLayout.RIGHT, 20, 0));
-        pnlInfo.setOpaque(false);
+        lblWelcome = new JLabel("Hoşgeldin, " + currentUser.getAdSoyad());
+        lblWelcome.setForeground(Color.WHITE);
+        lblWelcome.setFont(new Font("Segoe UI", Font.BOLD, 24));
+
+        JPanel pnlHeadRight = new JPanel(new FlowLayout(FlowLayout.RIGHT, 20, 0));
+        pnlHeadRight.setOpaque(false);
 
         lblOdaBilgisi = new JLabel("Oda: Yükleniyor...");
-        lblOdaBilgisi.setForeground(new Color(255, 200, 0)); // Gold
-        lblOdaBilgisi.putClientProperty("FlatLaf.style", "font: bold");
-        pnlInfo.add(lblOdaBilgisi);
+        lblOdaBilgisi.setForeground(new Color(255, 193, 7)); // Amber
+        lblOdaBilgisi.setFont(new Font("Segoe UI", Font.BOLD, 16));
 
-        JButton btnProfil = new JButton("Bilgilerimi Güncelle");
-        pnlInfo.add(btnProfil);
-        btnProfil.addActionListener(e -> showUpdateProfileDialog());
+        JButton btnProfile = UIHelper.createModernButton("👤 Profilim", new Color(70, 130, 180));
+        btnProfile.setPreferredSize(new Dimension(120, 35));
+        btnProfile.addActionListener(e -> showUpdateProfileDialog());
 
-        pnlTop.add(pnlInfo, BorderLayout.EAST);
-        add(pnlTop, BorderLayout.NORTH);
+        pnlHeadRight.add(lblOdaBilgisi);
+        pnlHeadRight.add(btnProfile);
 
-        // --- 2. ANA İÇERİK (3 SÜTUN) ---
-        JPanel pnlCenter = new JPanel(new GridLayout(1, 3, 20, 0));
-        pnlCenter.setBorder(new EmptyBorder(20, 20, 20, 20));
-        add(pnlCenter, BorderLayout.CENTER);
+        pnlHeader.add(lblWelcome, BorderLayout.WEST);
+        pnlHeader.add(pnlHeadRight, BorderLayout.EAST);
+        add(pnlHeader, BorderLayout.NORTH);
 
-        // --- SOL: İZİN TALEP FORMU ---
-        JPanel pnlLeft = createCardPanel("Yeni İzin Talebi");
+        // --- 2. DASHBOARD BODY ---
+        JPanel pnlBody = new JPanel(new GridLayout(1, 3, 20, 20));
+        pnlBody.setOpaque(false);
+        pnlBody.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        JPanel pnlForm = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 5, 5, 5);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.gridx = 0;
-        gbc.gridy = 0;
+        // --- WIDGET 1: İZİN TALEP ---
+        JPanel pnlW1 = UIHelper.createCardPanel();
+        pnlW1.setLayout(new BorderLayout());
+        pnlW1.add(UIHelper.createHeaderLabel("📝  Yeni İzin Talebi"), BorderLayout.NORTH);
 
-        pnlForm.add(new JLabel("Başlangıç (GG.AA.YYYY):"), gbc);
-        gbc.gridy++;
+        JPanel form = new JPanel(new GridBagLayout());
+        form.setOpaque(false);
+        GridBagConstraints g = new GridBagConstraints();
+        g.insets = new Insets(10, 5, 5, 5);
+        g.fill = GridBagConstraints.HORIZONTAL;
+        g.gridx = 0;
+        g.weightx = 1.0;
+
+        form.add(new JLabel("Başlangıç Tarihi (GG.AA.YYYY)"), g);
         txtBaslangic = new JTextField();
-        txtBaslangic.putClientProperty("JTextField.placeholderText", "Örn: 15.05.2025");
-        pnlForm.add(txtBaslangic, gbc);
+        txtBaslangic.putClientProperty("FlatLaf.style", "padding: 5,5,5,5");
+        form.add(txtBaslangic, g);
 
-        gbc.gridy++;
-        pnlForm.add(new JLabel("Bitiş (GG.AA.YYYY):"), gbc);
-        gbc.gridy++;
+        form.add(new JLabel("Bitiş Tarihi (GG.AA.YYYY)"), g);
         txtBitis = new JTextField();
-        txtBitis.putClientProperty("JTextField.placeholderText", "Örn: 20.05.2025");
-        pnlForm.add(txtBitis, gbc);
+        txtBitis.putClientProperty("FlatLaf.style", "padding: 5,5,5,5");
+        form.add(txtBitis, g);
 
-        gbc.gridy++;
-        pnlForm.add(new JLabel("Sebep:"), gbc);
-        gbc.gridy++;
+        form.add(new JLabel("Sebep"), g);
         txtSebep = new JTextField();
-        pnlForm.add(txtSebep, gbc);
+        txtSebep.putClientProperty("FlatLaf.style", "padding: 5,5,5,5");
+        form.add(txtSebep, g);
 
-        gbc.gridy++;
-        gbc.insets = new Insets(20, 5, 5, 5);
-        JButton btnGonder = new JButton("Talep Gönder");
-        btnGonder.putClientProperty("FlatLaf.style", "font: bold");
-        btnGonder.setBackground(new Color(40, 167, 69)); // Success Green
-        btnGonder.setForeground(Color.WHITE);
-        pnlForm.add(btnGonder, gbc);
+        g.insets = new Insets(30, 5, 5, 5);
+        JButton btnSend = UIHelper.createModernButton("Talebi Gönder 🚀", new Color(46, 204, 113));
+        btnSend.addActionListener(e -> sendPermissionRequest());
+        form.add(btnSend, g);
 
-        // Formu yukarı sabitlemek için kuzey'e ekle
-        JPanel pnlFormWrapper = new JPanel(new BorderLayout());
-        pnlFormWrapper.add(pnlForm, BorderLayout.NORTH);
-        pnlLeft.add(pnlFormWrapper, BorderLayout.CENTER);
+        // Formu yukarı hizalamak için wrapper
+        JPanel formWrapper = new JPanel(new BorderLayout());
+        formWrapper.setOpaque(false);
+        formWrapper.add(form, BorderLayout.NORTH);
+        pnlW1.add(formWrapper, BorderLayout.CENTER);
 
-        btnGonder.addActionListener(e -> sendPermissionRequest());
-        pnlCenter.add(pnlLeft);
+        // --- WIDGET 2: ODA ARKADAŞLARI ---
+        JPanel pnlW2 = UIHelper.createCardPanel();
+        pnlW2.setLayout(new BorderLayout());
+        pnlW2.add(UIHelper.createHeaderLabel("👥  Oda Arkadaşlarım"), BorderLayout.NORTH);
 
-        // --- ORTA: ODA ARKADAŞLARI ---
-        JPanel pnlMiddle = createCardPanel("Oda Arkadaşlarım");
         String[] colMates = { "Ad", "Soyad", "İletişim" };
         modelRoommates = new DefaultTableModel(colMates, 0) {
             public boolean isCellEditable(int r, int c) {
                 return false;
             }
         };
-        JTable tblRoommates = new JTable(modelRoommates);
-        tblRoommates.setShowVerticalLines(false);
-        tblRoommates.setRowHeight(25);
-        pnlMiddle.add(new JScrollPane(tblRoommates), BorderLayout.CENTER);
-        pnlCenter.add(pnlMiddle);
+        JTable tblMates = new JTable(modelRoommates);
+        UIHelper.decorateTable(tblMates);
+        pnlW2.add(new JScrollPane(tblMates), BorderLayout.CENTER);
 
-        // --- SAĞ: İZİN GEÇMİŞİ ---
-        JPanel pnlRight = createCardPanel("İzin Geçmişim");
+        // --- WIDGET 3: GEÇMİŞ İZİNLERİM ---
+        JPanel pnlW3 = UIHelper.createCardPanel();
+        pnlW3.setLayout(new BorderLayout());
+        pnlW3.add(UIHelper.createHeaderLabel("📅  İzin Geçmişim"), BorderLayout.NORTH);
+
         String[] colPerms = { "Tarih Aralığı", "Sebep", "Durum" };
         modelPermissions = new DefaultTableModel(colPerms, 0) {
             public boolean isCellEditable(int r, int c) {
                 return false;
             }
         };
-        JTable tblPermissions = new JTable(modelPermissions);
-        tblPermissions.setShowVerticalLines(false);
-        tblPermissions.setRowHeight(25);
-        tblPermissions.getColumnModel().getColumn(0).setPreferredWidth(120);
+        JTable tblPerms = new JTable(modelPermissions);
+        UIHelper.decorateTable(tblPerms);
+        // Durum sütununa renk katmak için renderer yazılabilir ama basit tutalım.
+        pnlW3.add(new JScrollPane(tblPerms), BorderLayout.CENTER);
 
-        pnlRight.add(new JScrollPane(tblPermissions), BorderLayout.CENTER);
-        pnlCenter.add(pnlRight);
+        pnlBody.add(pnlW1);
+        pnlBody.add(pnlW2);
+        pnlBody.add(pnlW3);
+
+        add(pnlBody, BorderLayout.CENTER);
     }
 
-    // Yardımcı method: Kart görünümlü panel
-    private JPanel createCardPanel(String title) {
-        JPanel pnl = new JPanel(new BorderLayout());
-        pnl.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(new Color(200, 200, 200)),
-                title,
-                TitledBorder.DEFAULT_JUSTIFICATION,
-                TitledBorder.DEFAULT_POSITION,
-                new Font("Segoe UI", Font.BOLD, 14),
-                new Color(50, 50, 50)));
-        pnl.setBackground(Color.WHITE);
-        return pnl;
-    }
+    // --- LOGIC METHODS ---
+    // (Aynı mantık)
 
-    // --- PROFİL GÜNCELLEME PENCERESİ ---
     private void showUpdateProfileDialog() {
         JDialog dialog = new JDialog(this, "Profil Bilgilerini Güncelle", true);
         dialog.setSize(400, 450);
@@ -172,7 +162,6 @@ public class StudentView extends BasePage {
         gbc.gridx = 0;
         gbc.gridy = 0;
 
-        // Mevcut bilgileri çek
         String currentTel = "", currentAdres = "", currentEmail = currentUser.getEmail();
         try {
             Connection conn = DatabaseConnection.getInstance().getConnection();
@@ -269,7 +258,6 @@ public class StudentView extends BasePage {
         }
     }
 
-    // --- İZİN TALEBİ (TARİH KONTROLLÜ) ---
     private void sendPermissionRequest() {
         String baslangic = txtBaslangic.getText();
         String bitis = txtBitis.getText();
@@ -280,7 +268,6 @@ public class StudentView extends BasePage {
             return;
         }
 
-        // DateUtils sınıfını kullanıyoruz
         if (!DateUtils.isValidFormat(baslangic) || !DateUtils.isValidFormat(bitis)) {
             JOptionPane.showMessageDialog(this, "Tarih formatı GG.AA.YYYY olmalı! (Örn: 15.05.2025)", "Format Hatası",
                     JOptionPane.WARNING_MESSAGE);

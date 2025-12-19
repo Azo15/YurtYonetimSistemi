@@ -3,10 +3,10 @@ package com.yurt.view;
 import com.yurt.database.DatabaseConnection;
 import com.yurt.model.User;
 import com.yurt.patterns.builder.StudentBuilder;
+import com.yurt.utils.UIHelper;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
@@ -20,6 +20,9 @@ import java.sql.Statement;
 public class PersonnelView extends BasePage {
 
     private User currentUser;
+    private CardLayout cardLayout;
+    private JPanel mainContentPanel;
+    private JButton currentActiveBtn; // Aktif butonu tutmak için
 
     // Tablolar
     private JTable tblRequests, tblRooms, tblStudents;
@@ -37,7 +40,7 @@ public class PersonnelView extends BasePage {
     private JTextField txtRaporBaslangic;
 
     public PersonnelView(User user) {
-        super("Yurt Yönetim Paneli - " + user.getAdSoyad(), 1280, 800);
+        super("Admin Dashboard - " + user.getAdSoyad(), 1400, 900);
         this.currentUser = user;
         initializeComponents();
 
@@ -50,266 +53,292 @@ public class PersonnelView extends BasePage {
 
     @Override
     public void initializeComponents() {
-        JTabbedPane tabbedPane = new JTabbedPane();
-        tabbedPane.putClientProperty("FlatLaf.style", "tabType: card; tabHeight: 40");
+        // --- ANA LAYOUT: SIDEBAR + CONTENT ---
+        setLayout(new BorderLayout());
 
-        // ==========================================
-        // SEKME 1: İZİN YÖNETİMİ
-        // ==========================================
-        JPanel pnlPermissions = new JPanel(new BorderLayout(10, 10));
-        pnlPermissions.setBorder(new EmptyBorder(10, 10, 10, 10));
+        // 1. SIDEBAR (SOL MENÜ)
+        JPanel sidebar = new JPanel();
+        sidebar.setBackground(new Color(33, 37, 41)); // Dark Sidebar
+        sidebar.setPreferredSize(new Dimension(250, getHeight()));
+        sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
+        sidebar.setBorder(new EmptyBorder(20, 10, 20, 10));
 
-        // --- ÜST PANEL (FİLTRELER) ---
-        JPanel pnlPermTop = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
-        pnlPermTop.add(new JLabel("Filtrele:"));
+        // Sidebar Header
+        JLabel lblBrand = new JLabel("YURT YÖNETİM", SwingConstants.CENTER);
+        lblBrand.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        lblBrand.setForeground(Color.WHITE);
+        lblBrand.setAlignmentX(Component.CENTER_ALIGNMENT);
+        sidebar.add(lblBrand);
 
-        JButton btnBekleyenler = new JButton("Onay Bekleyenler");
-        btnBekleyenler.setBackground(new Color(255, 165, 0));
-        btnBekleyenler.setForeground(Color.WHITE);
-        pnlPermTop.add(btnBekleyenler);
+        sidebar.add(Box.createVerticalStrut(10));
+        JLabel lblRole = new JLabel("Admin Panel", SwingConstants.CENTER);
+        lblRole.setForeground(Color.LIGHT_GRAY);
+        lblRole.setAlignmentX(Component.CENTER_ALIGNMENT);
+        sidebar.add(lblRole);
+        sidebar.add(Box.createVerticalStrut(40));
 
-        JButton btnGecmis = new JButton("Geçmiş İşlemler");
-        btnGecmis.setBackground(new Color(100, 149, 237));
-        btnGecmis.setForeground(Color.WHITE);
-        pnlPermTop.add(btnGecmis);
+        // Menü Butonları
+        sidebar.add(createSidebarButton("📊  İzin İşlemleri", "cardPermissions"));
+        sidebar.add(Box.createVerticalStrut(10));
+        sidebar.add(createSidebarButton("🏠  Oda Yönetimi", "cardRooms"));
+        sidebar.add(Box.createVerticalStrut(10));
+        sidebar.add(createSidebarButton("👥  Öğrenci Listesi", "cardStudents"));
 
-        pnlPermTop.add(Box.createHorizontalStrut(20)); // Boşluk
-        pnlPermTop.add(new JLabel("Yıla Göre Ara (Örn: 2025):"));
-        txtRaporBaslangic = new JTextField(10);
-        pnlPermTop.add(txtRaporBaslangic);
-        JButton btnAraTarih = new JButton("Ara");
-        pnlPermTop.add(btnAraTarih);
+        sidebar.add(Box.createVerticalGlue()); // Alt kısma boşluk
+        JButton btnLogout = createSidebarButton("🚪  Çıkış Yap", "logout");
+        btnLogout.setBackground(new Color(220, 53, 69)); // Red Logout
+        sidebar.add(btnLogout);
 
-        pnlPermissions.add(pnlPermTop, BorderLayout.NORTH);
+        add(sidebar, BorderLayout.WEST);
 
-        // --- ORTA PANEL (TABLO) ---
+        // 2. ANA İÇERİK (CARD LAYOUT)
+        cardLayout = new CardLayout();
+        mainContentPanel = new JPanel(cardLayout);
+        mainContentPanel.setBackground(UIHelper.BG_LIGHT);
+        mainContentPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        // --- KART 1: İZİN YÖNETİMİ ---
+        mainContentPanel.add(createPermissionsPanel(), "cardPermissions");
+
+        // --- KART 2: ODA & KAYIT YÖNETİMİ ---
+        mainContentPanel.add(createRoomsPanel(), "cardRooms");
+
+        // --- KART 3: ÖĞRENCİ LİSTESİ ---
+        mainContentPanel.add(createStudentsPanel(), "cardStudents");
+
+        add(mainContentPanel, BorderLayout.CENTER);
+    }
+
+    private JButton createSidebarButton(String text, String cardName) {
+        JButton btn = new JButton(text);
+        btn.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        btn.setForeground(Color.WHITE);
+        btn.setBackground(new Color(33, 37, 41)); // Transparent-like
+        btn.setMaximumSize(new Dimension(230, 45));
+        btn.setFocusPainted(false);
+        btn.setBorderPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setHorizontalAlignment(SwingConstants.LEFT);
+        btn.putClientProperty("FlatLaf.style", "arc: 10; margin: 0, 20, 0, 0"); // Left margin icons
+
+        btn.addActionListener(e -> {
+            if (cardName.equals("logout")) {
+                this.dispose();
+                new LoginView();
+            } else {
+                cardLayout.show(mainContentPanel, cardName);
+                if (currentActiveBtn != null)
+                    currentActiveBtn.setBackground(new Color(33, 37, 41));
+                btn.setBackground(UIHelper.PRIMARY_COLOR);
+                currentActiveBtn = btn;
+            }
+        });
+
+        // Hover Effect
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                if (btn != currentActiveBtn && !cardName.equals("logout"))
+                    btn.setBackground(new Color(60, 60, 60));
+            }
+
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                if (btn != currentActiveBtn && !cardName.equals("logout"))
+                    btn.setBackground(new Color(33, 37, 41));
+            }
+        });
+        return btn;
+    }
+
+    // --- PANEL OLUŞTURUCULAR ---
+
+    private JPanel createPermissionsPanel() {
+        JPanel panel = new JPanel(new BorderLayout(15, 15));
+        panel.setOpaque(false);
+
+        // Header
+        JPanel pnlHeader = UIHelper.createCardPanel();
+        pnlHeader.add(UIHelper.createHeaderLabel("İzin Talepleri Yönetimi"));
+
+        JPanel pnlActions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        pnlActions.setOpaque(false);
+
+        JButton btnBekleyen = UIHelper.createModernButton("Bekleyenler", Color.ORANGE);
+        JButton btnGecmis = UIHelper.createModernButton("Geçmiş", new Color(100, 149, 237));
+
+        pnlActions.add(btnBekleyen);
+        pnlActions.add(btnGecmis);
+        pnlActions.add(new JLabel("  |  Tarih:"));
+        txtRaporBaslangic = new JTextField(8);
+        pnlActions.add(txtRaporBaslangic);
+        JButton btnAra = new JButton("Ara");
+        pnlActions.add(btnAra);
+
+        pnlHeader.add(pnlActions, BorderLayout.EAST);
+        panel.add(pnlHeader, BorderLayout.NORTH);
+
+        // Table
         String[] colPerms = { "ID", "Öğrenci Adı", "TC No", "Başlangıç", "Bitiş", "Sebep", "Durum" };
         modelRequests = new DefaultTableModel(colPerms, 0) {
-            public boolean isCellEditable(int row, int column) {
+            public boolean isCellEditable(int r, int c) {
                 return false;
             }
         };
         tblRequests = new JTable(modelRequests);
-        tblRequests.setRowHeight(25);
-        tblRequests.setShowVerticalLines(false);
-        pnlPermissions.add(new JScrollPane(tblRequests), BorderLayout.CENTER);
+        UIHelper.decorateTable(tblRequests);
 
-        // --- ALT PANEL (BUTONLAR) ---
-        JPanel pnlPermBottom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 10));
+        JScrollPane scroll = new JScrollPane(tblRequests);
+        scroll.setBorder(BorderFactory.createEmptyBorder());
+        panel.add(scroll, BorderLayout.CENTER);
 
-        JButton btnOnayla = new JButton("SEÇİLENİ ONAYLA");
-        btnOnayla.setBackground(new Color(60, 179, 113));
-        btnOnayla.setForeground(Color.WHITE);
-        pnlPermBottom.add(btnOnayla);
+        // Footer Actions
+        JPanel pnlFooter = UIHelper.createCardPanel();
+        pnlFooter.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 5));
 
-        JButton btnReddet = new JButton("SEÇİLENİ REDDET");
-        btnReddet.setBackground(new Color(220, 20, 60));
-        btnReddet.setForeground(Color.WHITE);
-        pnlPermBottom.add(btnReddet);
+        JButton btnOnayla = UIHelper.createModernButton("✅ ONAYLA", new Color(46, 204, 113));
+        JButton btnReddet = UIHelper.createModernButton("❌ REDDET", new Color(231, 76, 60));
+        JButton btnSil = UIHelper.createModernButton("🗑 SİL", Color.GRAY);
 
-        JButton btnIzinSil = new JButton("KAYDI SİL");
-        btnIzinSil.setBackground(Color.DARK_GRAY);
-        btnIzinSil.setForeground(Color.WHITE);
-        pnlPermBottom.add(btnIzinSil);
+        pnlFooter.add(btnOnayla);
+        pnlFooter.add(btnReddet);
+        pnlFooter.add(btnSil);
+        panel.add(pnlFooter, BorderLayout.SOUTH);
 
-        pnlPermissions.add(pnlPermBottom, BorderLayout.SOUTH);
-
-        // Listenerlar
-        btnBekleyenler.addActionListener(e -> loadPermissionRequests("BEKLEMEDE"));
+        // Listeners
+        btnBekleyen.addActionListener(e -> loadPermissionRequests("BEKLEMEDE"));
         btnGecmis.addActionListener(e -> loadPermissionHistory());
-        btnAraTarih.addActionListener(e -> searchPermissionsByDate(txtRaporBaslangic.getText()));
+        btnAra.addActionListener(e -> searchPermissionsByDate(txtRaporBaslangic.getText()));
         btnOnayla.addActionListener(e -> updatePermissionStatus("ONAYLANDI"));
         btnReddet.addActionListener(e -> updatePermissionStatus("REDDEDILDI"));
-        btnIzinSil.addActionListener(e -> deletePermission());
+        btnSil.addActionListener(e -> deletePermission());
 
-        tabbedPane.addTab("İzin Yönetimi", pnlPermissions);
+        return panel;
+    }
 
-        // ==========================================
-        // SEKME 2: ODA VE KAYIT (SPLIT PANE)
-        // ==========================================
-        JSplitPane splitPane2 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-        splitPane2.setDividerLocation(600);
-        splitPane2.setResizeWeight(0.5);
+    private JPanel createRoomsPanel() {
+        JPanel panel = new JPanel(new GridLayout(1, 2, 20, 0));
+        panel.setOpaque(false);
 
-        // --- SOL: ODALAR LİSTESİ ---
-        JPanel pnlRoomsLeft = new JPanel(new BorderLayout(5, 5));
-        pnlRoomsLeft.setBorder(new EmptyBorder(10, 10, 10, 10));
-
-        JLabel lblRoomsHeader = new JLabel("MEVCUT ODALAR");
-        lblRoomsHeader.putClientProperty("FlatLaf.style", "font: bold +2");
-        pnlRoomsLeft.add(lblRoomsHeader, BorderLayout.NORTH);
+        // SOL: Oda Listesi
+        JPanel pnlLeft = UIHelper.createCardPanel();
+        pnlLeft.add(UIHelper.createHeaderLabel("Oda Durumları"), BorderLayout.NORTH);
 
         String[] colRooms = { "ID", "Oda No", "Kapasite", "Mevcut", "Durum" };
         modelRooms = new DefaultTableModel(colRooms, 0) {
-            public boolean isCellEditable(int row, int column) {
+            public boolean isCellEditable(int r, int c) {
                 return false;
             }
         };
         tblRooms = new JTable(modelRooms);
-        tblRooms.setRowHeight(25);
-        pnlRoomsLeft.add(new JScrollPane(tblRooms), BorderLayout.CENTER);
+        UIHelper.decorateTable(tblRooms);
+        pnlLeft.add(new JScrollPane(tblRooms), BorderLayout.CENTER);
 
-        JButton btnOdaSil = new JButton("Seçili Odayı Sil");
-        btnOdaSil.setBackground(Color.RED);
-        btnOdaSil.setForeground(Color.WHITE);
-        pnlRoomsLeft.add(btnOdaSil, BorderLayout.SOUTH);
+        JButton btnSil = UIHelper.createModernButton("Seçili Odayı Sil", Color.RED);
+        pnlLeft.add(btnSil, BorderLayout.SOUTH);
+        panel.add(pnlLeft);
 
-        splitPane2.setLeftComponent(pnlRoomsLeft);
+        // SAĞ: İşlem Kartları (ScrolPane içinde)
+        JPanel pnlRight = new JPanel();
+        pnlRight.setLayout(new BoxLayout(pnlRight, BoxLayout.Y_AXIS));
+        pnlRight.setOpaque(false);
 
-        // --- SAĞ: FORMLAR (SCROLLABLE) ---
-        JPanel pnlFormsWrapper = new JPanel();
-        pnlFormsWrapper.setLayout(new BoxLayout(pnlFormsWrapper, BoxLayout.Y_AXIS));
-        pnlFormsWrapper.setBorder(new EmptyBorder(10, 15, 10, 15));
+        // Form 1
+        JPanel pnlAddRef = UIHelper.createCardPanel();
+        pnlAddRef.setLayout(new GridBagLayout());
+        GridBagConstraints g = new GridBagConstraints();
+        g.insets = new Insets(5, 5, 5, 5);
+        g.fill = GridBagConstraints.HORIZONTAL;
 
-        // Form 1: Toplu Oda
-        JPanel pnlAddRoom = createCardPanel("Toplu Oda Ekleme");
-        JPanel pnlRoomForm = new JPanel(new GridLayout(2, 4, 5, 5));
+        // Basitlik için flow kullanalım burda
+        pnlAddRef.add(new JLabel("Odalar: "), g);
+        txtOdaBaslangic = new JTextField(3);
+        pnlAddRef.add(txtOdaBaslangic, g);
+        pnlAddRef.add(new JLabel(" - "), g);
+        txtOdaBitis = new JTextField(3);
+        pnlAddRef.add(txtOdaBitis, g);
+        pnlAddRef.add(new JLabel(" Kap: "), g);
+        txtKapasite = new JTextField(3);
+        pnlAddRef.add(txtKapasite, g);
+        JButton btnEkle = new JButton("Oluştur");
+        btnEkle.addActionListener(e -> addBulkRooms());
+        pnlAddRef.add(btnEkle, g);
 
-        pnlRoomForm.add(new JLabel("Başlangıç No:"));
-        txtOdaBaslangic = new JTextField();
-        pnlRoomForm.add(txtOdaBaslangic);
+        pnlRight.add(pnlAddRef);
+        pnlRight.add(Box.createVerticalStrut(15));
 
-        pnlRoomForm.add(new JLabel("Bitiş No:"));
-        txtOdaBitis = new JTextField();
-        pnlRoomForm.add(txtOdaBitis);
-
-        pnlRoomForm.add(new JLabel("Kapasite:"));
-        txtKapasite = new JTextField();
-        pnlRoomForm.add(txtKapasite);
-
-        JButton btnOdaEkle = new JButton("Oda Ekle");
-        pnlRoomForm.add(new JLabel(""));
-        pnlRoomForm.add(btnOdaEkle);
-
-        pnlAddRoom.add(pnlRoomForm);
-        pnlFormsWrapper.add(pnlAddRoom);
-        pnlFormsWrapper.add(Box.createVerticalStrut(20));
-
-        // Form 2: Öğrenci Kayıt
-        JPanel pnlAddStudent = createCardPanel("Yeni Öğrenci Kayıt");
-        JPanel pnlStudentForm = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weightx = 1.0;
-
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        pnlStudentForm.add(new JLabel("Ad:"), gbc);
-        gbc.gridx = 1;
+        // Form 2: Kayıt
+        JPanel pnlReg = UIHelper.createCardPanel();
+        pnlReg.setLayout(new GridLayout(9, 2, 5, 10)); // Grid daha kolay
+        pnlReg.add(new JLabel("Ad:"));
         txtYeniAd = new JTextField();
-        pnlStudentForm.add(txtYeniAd, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        pnlStudentForm.add(new JLabel("Soyad:"), gbc);
-        gbc.gridx = 1;
+        pnlReg.add(txtYeniAd);
+        pnlReg.add(new JLabel("Soyad:"));
         txtYeniSoyad = new JTextField();
-        pnlStudentForm.add(txtYeniSoyad, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        pnlStudentForm.add(new JLabel("TC Kimlik:"), gbc);
-        gbc.gridx = 1;
+        pnlReg.add(txtYeniSoyad);
+        pnlReg.add(new JLabel("TC:"));
         txtYeniTc = new JTextField();
-        pnlStudentForm.add(txtYeniTc, gbc);
         setupTcField(txtYeniTc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 3;
-        pnlStudentForm.add(new JLabel("Şifre:"), gbc);
-        gbc.gridx = 1;
+        pnlReg.add(txtYeniTc);
+        pnlReg.add(new JLabel("Şifre:"));
         txtYeniSifre = new JTextField();
-        pnlStudentForm.add(txtYeniSifre, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 4;
-        pnlStudentForm.add(new JLabel("Kullanıcı Adı:"), gbc);
-        gbc.gridx = 1;
+        pnlReg.add(txtYeniSifre);
+        pnlReg.add(new JLabel("K.Adı:"));
         txtYeniKadi = new JTextField();
-        pnlStudentForm.add(txtYeniKadi, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 5;
-        pnlStudentForm.add(new JLabel("E-Posta:"), gbc);
-        gbc.gridx = 1;
+        pnlReg.add(txtYeniKadi);
+        pnlReg.add(new JLabel("Email:"));
         txtYeniEmail = new JTextField();
-        pnlStudentForm.add(txtYeniEmail, gbc);
-
-        gbc.gridx = 0;
-        gbc.gridy = 6;
-        pnlStudentForm.add(new JLabel("Telefon:"), gbc);
-        gbc.gridx = 1;
+        pnlReg.add(txtYeniEmail);
+        pnlReg.add(new JLabel("Tel:"));
         txtYeniTel = new JTextField();
-        pnlStudentForm.add(txtYeniTel, gbc);
+        pnlReg.add(txtYeniTel);
 
-        gbc.gridx = 0;
-        gbc.gridy = 7;
-        gbc.gridwidth = 2;
-        JButton btnOgrKaydet = new JButton("Öğrenciyi Sisteme Kaydet");
-        btnOgrKaydet.setBackground(new Color(255, 140, 0));
-        btnOgrKaydet.setForeground(Color.WHITE);
-        pnlStudentForm.add(btnOgrKaydet, gbc);
+        JButton btnKaydet = UIHelper.createModernButton("Öğrenciyi Kaydet", UIHelper.ACCENT_COLOR);
+        btnKaydet.addActionListener(e -> addNewStudent());
+        pnlReg.add(new JLabel(""));
+        pnlReg.add(btnKaydet);
 
-        pnlAddStudent.add(pnlStudentForm);
-        pnlFormsWrapper.add(pnlAddStudent);
-        pnlFormsWrapper.add(Box.createVerticalStrut(20));
+        pnlRight.add(pnlReg);
 
-        // Form 3: Oda Atama
-        JPanel pnlAssign = createCardPanel("Öğrenciyi Odaya Yerleştir");
-        JPanel pnlAssignForm = new JPanel(new GridLayout(3, 2, 5, 5));
-
-        pnlAssignForm.add(new JLabel("Öğrenci TC:"));
-        txtOgrenciTc = new JTextField();
-        pnlAssignForm.add(txtOgrenciTc);
-
-        pnlAssignForm.add(new JLabel("Oda No:"));
-        txtAtanacakOda = new JTextField();
-        pnlAssignForm.add(txtAtanacakOda);
-
-        JButton btnAta = new JButton("Yerleştir / Transfer Et");
-        pnlAssignForm.add(new JLabel(""));
-        pnlAssignForm.add(btnAta);
-
-        pnlAssign.add(pnlAssignForm);
-        pnlFormsWrapper.add(pnlAssign);
-
-        JScrollPane rightScroll = new JScrollPane(pnlFormsWrapper);
-        rightScroll.setBorder(null);
-        splitPane2.setRightComponent(rightScroll);
-
-        // Listenerlar
-        btnOdaEkle.addActionListener(e -> addBulkRooms());
-        btnOgrKaydet.addActionListener(e -> addNewStudent());
+        // Form 3: Atama
+        pnlRight.add(Box.createVerticalStrut(15));
+        JPanel pnlAssign = UIHelper.createCardPanel();
+        pnlAssign.add(new JLabel("Hızlı Oda Atama"), BorderLayout.NORTH);
+        JPanel innerAssign = new JPanel(new FlowLayout());
+        innerAssign.setOpaque(false);
+        txtOgrenciTc = new JTextField(11);
+        txtOgrenciTc.putClientProperty("JTextField.placeholderText", "Öğrenci TC");
+        txtAtanacakOda = new JTextField(5);
+        txtAtanacakOda.putClientProperty("JTextField.placeholderText", "Oda No");
+        JButton btnAta = new JButton("Ata");
         btnAta.addActionListener(e -> assignStudentToRoom());
-        btnOdaSil.addActionListener(e -> deleteRoom());
+        innerAssign.add(txtOgrenciTc);
+        innerAssign.add(txtAtanacakOda);
+        innerAssign.add(btnAta);
+        pnlAssign.add(innerAssign, BorderLayout.CENTER);
+        pnlRight.add(pnlAssign);
 
-        tabbedPane.addTab("Oda ve Kayıt İşlemleri", splitPane2);
+        panel.add(pnlRight);
 
-        // ==========================================
-        // SEKME 3: ÖĞRENCİ LİSTESİ
-        // ==========================================
-        JPanel pnlStudentList = new JPanel(new BorderLayout(10, 10));
-        pnlStudentList.setBorder(new EmptyBorder(10, 10, 10, 10));
+        btnSil.addActionListener(e -> deleteRoom());
 
-        JPanel pnlListTop = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        pnlListTop.add(new JLabel("Ara (Ad/Soyad/Oda No):"));
+        return panel;
+    }
+
+    private JPanel createStudentsPanel() {
+        JPanel panel = new JPanel(new BorderLayout(15, 15));
+        panel.setOpaque(false);
+
+        JPanel header = UIHelper.createCardPanel();
+        header.setLayout(new FlowLayout(FlowLayout.LEFT));
+        header.add(UIHelper.createHeaderLabel("Tüm Öğrenciler"));
+        header.add(Box.createHorizontalStrut(30));
         txtOgrenciAra = new JTextField(20);
-        pnlListTop.add(txtOgrenciAra);
-        JButton btnAra = new JButton("Ara");
-        pnlListTop.add(btnAra);
-        JButton btnYenile = new JButton("Yenile");
-        pnlListTop.add(btnYenile);
+        header.add(txtOgrenciAra);
+        JButton btnAra = new JButton("🔍 Ara");
+        header.add(btnAra);
+        JButton btnYenile = new JButton("🔄 Yenile");
+        header.add(btnYenile);
 
-        JButton btnOgrSil = new JButton("SEÇİLİ ÖĞRENCİYİ SİL");
-        btnOgrSil.setBackground(Color.RED);
-        btnOgrSil.setForeground(Color.WHITE);
-
-        JPanel pnlListTopWrapper = new JPanel(new BorderLayout());
-        pnlListTopWrapper.add(pnlListTop, BorderLayout.WEST);
-        pnlListTopWrapper.add(btnOgrSil, BorderLayout.EAST);
-
-        pnlStudentList.add(pnlListTopWrapper, BorderLayout.NORTH);
+        panel.add(header, BorderLayout.NORTH);
 
         String[] colStudents = { "ID", "TC No", "Ad", "Soyad", "Kullanıcı Adı", "Kaldığı Oda" };
         modelStudents = new DefaultTableModel(colStudents, 0) {
@@ -318,35 +347,30 @@ public class PersonnelView extends BasePage {
             }
         };
         tblStudents = new JTable(modelStudents);
-        tblStudents.setRowHeight(25);
-        pnlStudentList.add(new JScrollPane(tblStudents), BorderLayout.CENTER);
+        UIHelper.decorateTable(tblStudents);
+        panel.add(new JScrollPane(tblStudents), BorderLayout.CENTER);
 
-        // Listenerlar
+        JButton btnSil = UIHelper.createModernButton("Seçili Öğrenciyi Sil", Color.RED);
+        btnSil.addActionListener(e -> deleteStudent());
+
+        JPanel footer = UIHelper.createCardPanel();
+        footer.add(btnSil);
+        panel.add(footer, BorderLayout.SOUTH);
+
         btnAra.addActionListener(e -> loadStudents(txtOgrenciAra.getText()));
         btnYenile.addActionListener(e -> {
             txtOgrenciAra.setText("");
             loadStudents("");
         });
-        btnOgrSil.addActionListener(e -> deleteStudent());
 
-        tabbedPane.addTab("Öğrenci Listesi", pnlStudentList);
-
-        add(tabbedPane, BorderLayout.CENTER);
+        return panel;
     }
 
-    // --- YARDIMCI GÖRÜNÜM METOTLARI ---
-    private JPanel createCardPanel(String title) {
-        JPanel pnl = new JPanel(new BorderLayout());
-        pnl.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(new Color(200, 200, 200)), title,
-                TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION,
-                new Font("Segoe UI", Font.BOLD, 14), new Color(0, 102, 204)));
-        JPanel inner = new JPanel();
-        inner.setBorder(new EmptyBorder(10, 10, 10, 10));
-        inner.setLayout(new BorderLayout());
-        pnl.add(inner, BorderLayout.CENTER);
-        return inner; // İç panel döner, border dışta kalır
-    }
+    // --- LOGIC METHODS (UNCHANGED) ---
+    // (Aynı iş mantığı korunuyor)
+
+    // ... Bu kısımlar önceki kodla birebir aynı, sadece görünüme effect etmiyor ...
+    // Hız kazanmak için logic methodlarını buraya taşıyorum:
 
     private void setupTcField(JTextField field) {
         field.addKeyListener(new KeyAdapter() {
@@ -365,9 +389,6 @@ public class PersonnelView extends BasePage {
             }
         });
     }
-
-    // --- MANTIKSAL METOTLAR (ESKİ KODUN AYNISI) ---
-    // ... Burada logic değişmedi, sadece kopyalıyorum ...
 
     private void addNewStudent() {
         String ad = txtYeniAd.getText();

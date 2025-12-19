@@ -3,9 +3,12 @@ package com.yurt.view;
 import com.yurt.database.DatabaseConnection;
 import com.yurt.model.User;
 import com.yurt.patterns.Factory.UserFactory;
+import com.yurt.utils.UIHelper;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -18,89 +21,90 @@ public class LoginView extends BasePage {
     private JButton btnGiris;
 
     public LoginView() {
-        super("Giriş Yap - Yurt Otomasyonu", 450, 400); // Biraz daha karemsi, modern boyut
+        super("Giriş Yap - Yurt Otomasyonu", 500, 450);
         initializeComponents();
         setVisible(true);
     }
 
     @Override
     public void initializeComponents() {
-        // Arka planı kullanarak ortala
-        JPanel mainPanel = new JPanel(new GridBagLayout());
-        add(mainPanel, BorderLayout.CENTER);
+        // --- ARKA PLAN: DİNAMİK GRADIENT ---
+        // Timer ile renkleri yavaşça değiştirebiliriz ama şimdilik sabit güzel bir
+        // geçiş yapalım.
+        // Mavi -> Mor geçişi
+        Color color1 = new Color(135, 206, 250); // Açık Mavi
+        Color color2 = new Color(123, 104, 238); // Medium Slate Blue
 
+        JPanel bgPanel = UIHelper.createGradientPanel(color1, color2);
+        bgPanel.setLayout(new GridBagLayout()); // Kartı ortalamak için
+        add(bgPanel, BorderLayout.CENTER);
+
+        // --- LOGIN KARTI ---
+        JPanel cardPanel = UIHelper.createCardPanel();
+        cardPanel.setLayout(new GridBagLayout());
+        // Kart Boyutu
+        cardPanel.setPreferredSize(new Dimension(380, 450));
+
+        // Kartı ekle
+        bgPanel.add(cardPanel);
+
+        // --- İÇERİK ---
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.insets = new Insets(10, 10, 5, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
-
-        // --- BAŞLIK ---
-        JLabel lblHeader = new JLabel("Yurt Yönetim Sistemi", SwingConstants.CENTER);
-        lblHeader.putClientProperty("FlatLaf.style", "font: bold +10");
-        lblHeader.setForeground(new Color(50, 50, 50));
-
         gbc.gridx = 0;
+        gbc.weightx = 1.0;
+
+        // 1. Logo / İkon (Unicode kullanarak basit bir ev ikonu)
+        JLabel lblIcon = new JLabel("🏠", SwingConstants.CENTER);
+        lblIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 48));
         gbc.gridy = 0;
-        gbc.gridwidth = 2;
-        mainPanel.add(lblHeader, gbc);
+        cardPanel.add(lblIcon, gbc);
 
-        JLabel lblSubHeader = new JLabel("Lütfen kimliğinizi doğrulayın", SwingConstants.CENTER);
-        lblSubHeader.putClientProperty("FlatLaf.style", "font: +2");
-        lblSubHeader.setForeground(Color.GRAY);
-
+        // 2. Başlık
+        JLabel lblBaslik = new JLabel("Yurt Sistemi", SwingConstants.CENTER);
+        lblBaslik.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        lblBaslik.setForeground(new Color(60, 60, 60));
         gbc.gridy = 1;
-        gbc.insets = new Insets(0, 10, 30, 10); // Başlık ile form arası boşluk
-        mainPanel.add(lblSubHeader, gbc);
+        cardPanel.add(lblBaslik, gbc);
 
-        // --- FORM ---
-        gbc.gridwidth = 1;
-        gbc.insets = new Insets(5, 10, 5, 10);
-
-        // Kullanıcı
-        JLabel lblInfo = new JLabel("TC / Email / Kullanıcı Adı:");
-        lblInfo.putClientProperty("FlatLaf.style", "font: bold");
-        gbc.gridx = 0;
+        JLabel lblAlt = new JLabel("Hoşgeldiniz, lütfen giriş yapın", SwingConstants.CENTER);
+        lblAlt.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        lblAlt.setForeground(Color.GRAY);
         gbc.gridy = 2;
-        mainPanel.add(lblInfo, gbc);
+        gbc.insets = new Insets(0, 10, 20, 10);
+        cardPanel.add(lblAlt, gbc);
 
-        txtGirisBilgisi = new JTextField(20);
-        txtGirisBilgisi.putClientProperty("JTextField.placeholderText", "Örn: admin veya 12345678901");
-        gbc.gridx = 0;
-        gbc.gridy = 3;
-        mainPanel.add(txtGirisBilgisi, gbc);
-
-        // Şifre
-        JLabel lblPass = new JLabel("Şifre:");
-        lblPass.putClientProperty("FlatLaf.style", "font: bold");
-        gbc.gridx = 0;
-        gbc.gridy = 4;
-        gbc.insets = new Insets(15, 10, 5, 10); // Biraz ayır
-        mainPanel.add(lblPass, gbc);
-
-        txtSifre = new JPasswordField(20);
-        txtSifre.putClientProperty("JTextField.placeholderText", "********");
-        gbc.gridx = 0;
-        gbc.gridy = 5;
+        // 3. Form Inputları
         gbc.insets = new Insets(5, 10, 5, 10);
-        mainPanel.add(txtSifre, gbc);
 
-        // Buton
-        btnGiris = new JButton("Giriş Yap");
-        btnGiris.putClientProperty("FlatLaf.style", "font: bold +2");
-        btnGiris.setBackground(new Color(30, 136, 229)); // Modern Mavi
-        btnGiris.setForeground(Color.WHITE);
-        btnGiris.setFocusPainted(false);
-        btnGiris.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        gbc.gridy = 3;
+        cardPanel.add(new JLabel("Kullanıcı Bilgisi"), gbc);
+        txtGirisBilgisi = new JTextField();
+        txtGirisBilgisi.putClientProperty("JTextField.placeholderText", "TC / Email / Kullanıcı Adı");
+        txtGirisBilgisi.putClientProperty("FlatLaf.style", "arc: 10; padding: 5,5,5,5");
 
-        gbc.gridx = 0;
+        gbc.gridy = 4;
+        cardPanel.add(txtGirisBilgisi, gbc);
+
+        gbc.gridy = 5;
+        cardPanel.add(new JLabel("Şifre"), gbc);
+        txtSifre = new JPasswordField();
+        txtSifre.putClientProperty("JTextField.placeholderText", "••••••");
+        txtSifre.putClientProperty("FlatLaf.style", "arc: 10; padding: 5,5,5,5");
+        txtSifre.putClientProperty("JPasswordField.showRevealButton", true);
+
         gbc.gridy = 6;
+        cardPanel.add(txtSifre, gbc);
+
+        // 4. Giriş Butonu (Custom Modern Button)
+        gbc.gridy = 7;
         gbc.insets = new Insets(25, 10, 10, 10);
-        gbc.fill = GridBagConstraints.HORIZONTAL; // Buton tüm satırı kaplasın
-        gbc.ipady = 10; // Butonu biraz yüksek yap
-        mainPanel.add(btnGiris, gbc);
+        btnGiris = UIHelper.createModernButton("GÜVENLİ GİRİŞ", new Color(75, 110, 230));
+        btnGiris.setPreferredSize(new Dimension(100, 40));
+        cardPanel.add(btnGiris, gbc);
 
-        // ENTER TUŞU ÇALIŞSIN
         getRootPane().setDefaultButton(btnGiris);
-
         btnGiris.addActionListener(e -> loginIslemi());
     }
 
@@ -109,6 +113,7 @@ public class LoginView extends BasePage {
         String sifre = new String(txtSifre.getPassword());
 
         if (girisBilgisi.isEmpty() || sifre.isEmpty()) {
+            shakeWindow(); // Hata animasyonu
             JOptionPane.showMessageDialog(this, "Lütfen tüm alanları doldurun.", "Eksik Bilgi",
                     JOptionPane.WARNING_MESSAGE);
             return;
@@ -116,8 +121,6 @@ public class LoginView extends BasePage {
 
         try {
             Connection conn = DatabaseConnection.getInstance().getConnection();
-
-            // ÇOKLU GİRİŞ SORGUSU
             String sql = "SELECT * FROM users WHERE (tc_no = ? OR email = ? OR kullanici_adi = ?) AND sifre = ?";
             PreparedStatement ps = conn.prepareStatement(sql);
             ps.setString(1, girisBilgisi);
@@ -148,6 +151,7 @@ public class LoginView extends BasePage {
                     }
                 }
             } else {
+                shakeWindow();
                 JOptionPane.showMessageDialog(this, "Hatalı Giriş Bilgisi veya Şifre!", "Giriş Başarısız",
                         JOptionPane.ERROR_MESSAGE);
             }
@@ -155,6 +159,25 @@ public class LoginView extends BasePage {
         } catch (SQLException ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(this, "Veritabanı bağlantı hatası!", "Hata", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // Küçük bir ekran titreşim animasyonu
+    private void shakeWindow() {
+        Point p = getLocation();
+        try {
+            for (int i = 0; i < 3; i++) {
+                setLocation(p.x + 10, p.y);
+                Thread.sleep(20);
+                setLocation(p.x - 10, p.y);
+                Thread.sleep(20);
+                setLocation(p.x + 10, p.y);
+                Thread.sleep(20);
+                setLocation(p.x - 10, p.y);
+                Thread.sleep(20);
+                setLocation(p.x, p.y);
+            }
+        } catch (InterruptedException ignored) {
         }
     }
 }
