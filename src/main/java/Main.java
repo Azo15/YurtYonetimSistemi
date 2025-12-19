@@ -29,9 +29,9 @@ public class Main {
         // Varsayılan: SQLite
         DatabaseConnection db = DatabaseConnection.getInstance();
 
-        // ⚠️ MYSQL'E GEÇMEK İÇİN AŞAĞIDAKİ YORUMU AÇ:
-        db.setBridge(new com.yurt.patterns.bridge.MySQLBridge());
-
+//         MYSQL'E GEÇMEK İÇİN AŞAĞIDAKİ YORUMU AÇ:
+//         db.setBridge(new com.yurt.patterns.bridge.MySQLBridge());
+        
         // 2. Arayüzü Başlat
         SwingUtilities.invokeLater(() -> {
             new LoginView();
