@@ -18,6 +18,7 @@ Projede yönergede istenen **zorunlu 4 desen** ve **ekstra desenler** olmak üze
 4.  **Observer (Gözlemci):** Bir odaya öğrenci atandığında veya önemli bir değişiklik olduğunda, ilgili `Student` nesnesine anlık bildirim (`update`) gönderilir.
 5.  **State (Durum):** İzin talepleri bir yaşam döngüsüne sahiptir (`BEKLEMEDE` -> `ONAYLANDI` / `REDDEDILDI`). Bu durum geçişleri `PermissionState` arayüzü ve alt sınıfları ile yönetilir.
 6.  **Template Method Mantığı:** `BasePage` soyut sınıfı, tüm arayüz pencereleri için ortak bir şablon (iskelet) oluşturur; alt sınıflar sadece içeriği doldurur.
+7.  **Bridge (Köprü):** Veritabanı katmanını (`IDatabaseBridge`) soyutlayarak, uygulamanın kodunu değiştirmeden hem SQLite hem de MySQL ile çalışabilmesini sağlar.
 
 ---
 
@@ -38,6 +39,19 @@ Projenin mimari yapısını gösteren diyagramlar aşağıdadır:
 
 ---
 
+### 🌉 Bridge Design Pattern (Veritabanı Esnekliği)
+Proje, veritabanı bağımlılığını ortadan kaldırmak için **Bridge (Köprü) Tasarım Deseni** ile yeniden mimarilendirildi.
+*   **Çoklu Veritabanı Desteği:** Sistem hem **SQLite** (Gömülü) hem de **MySQL** (Sunucu) ile çalışabilir.
+*   **Kolay Geçiş:** Kodun içinde tek bir satırı değiştirerek veritabanı motorunu değiştirebilirsiniz.
+    ```java
+    // Main.java içinde:
+    db.setBridge(new MySQLBridge()); // MySQL'e geçer
+    // db.setBridge(new SQLiteBridge()); // SQLite'a döner
+    ```
+*   **Unicode Desteği:** Türkçe karakterler (ö, ü, ş) için özel connection string ayarları yapıldı.
+
+---
+
 ## 🚀 Temel Özellikler
 
 ### 👥 Personel (Yönetici) Modülü
@@ -51,7 +65,7 @@ Projenin mimari yapısını gösteren diyagramlar aşağıdadır:
 *   **Oda Bilgisi:** Kaldığı odayı ve oda arkadaşlarının iletişim bilgilerini görme.
 *   **İzin Talebi:** Belirli tarihler için mazeretli izin isteme ve durumunu (Onay/Red) takip etme.
 
----
+---  
 
 ## 🛠️ Teknolojiler
 *   **Dil:** Java 17+
