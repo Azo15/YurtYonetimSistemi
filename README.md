@@ -77,7 +77,7 @@ Proje, veritabanı bağımlılığını ortadan kaldırmak için **Bridge (Köpr
 
 ## 💻 Kurulum ve Çalıştırma
 
-### 1. IntelliJ IDEA ile (Önerilen)
+### 1. IntelliJ IDEA ile
 1.  Projeyi indirin ve IntelliJ IDEA ile açın (`pom.xml` dosyasını algılayacaktır).
 2.  Sağ altta Maven bağımlılıklarının (SQLite Driver) inmesini bekleyin.
 3.  `src/main/java/Main.java` dosyasını açıp **Run** (▶) butonuna basın.
